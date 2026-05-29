@@ -51,14 +51,25 @@
         /* --- Основной интерфейс --- */
         .sidebar { width: 320px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
         .user-profile { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px; }
-        .avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+        
+        /* Аватарка */
+        .avatar-container { position: relative; cursor: pointer; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); transition: 0.3s; }
+        .avatar-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; transition: 0.3s;
+        }
+        .avatar-container:hover .avatar-overlay { opacity: 1; }
+
         .user-info h3 { font-size: 16px; font-weight: 600; }
         .user-info p { font-size: 13px; color: var(--text-muted); }
 
         .chat-list { flex: 1; overflow-y: auto; }
-        .chat-item { display: flex; align-items: center; gap: 15px; padding: 15px 20px; cursor: pointer; transition: 0.2s; background-color: rgba(59, 130, 246, 0.1); }
-        .chat-avatar { width: 45px; height: 45px; border-radius: 50%; background-color: var(--accent); display: flex; justify-content: center; align-items: center; }
-        .chat-details flex: 1;
+        .chat-item { display: flex; align-items: center; gap: 15px; padding: 15px 20px; cursor: pointer; transition: 0.2s; background-color: rgba(59, 130, 246, 0.1); border-left: 4px solid var(--primary); }
+        .chat-avatar { width: 45px; height: 45px; border-radius: 50%; background-color: var(--accent); display: flex; justify-content: center; align-items: center; font-size: 20px;}
+        .chat-details { flex: 1; }
         .chat-header h4 { font-size: 15px; }
 
         .chat-area { flex: 1; display: flex; flex-direction: column; background-color: var(--chat-bg); }
@@ -66,16 +77,17 @@
         .current-chat-info { display: flex; align-items: center; gap: 15px; }
         
         .messages-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .message { max-width: 60%; padding: 12px 16px; border-radius: 15px; font-size: 14px; line-height: 1.4; position: relative; }
+        .message { max-width: 60%; padding: 12px 16px; border-radius: 15px; font-size: 14px; line-height: 1.4; position: relative; word-wrap: break-word;}
         .message.received { background-color: var(--msg-received); align-self: flex-start; border-bottom-left-radius: 5px; }
         .message.sent { background-color: var(--msg-sent); align-self: flex-end; border-bottom-right-radius: 5px; }
         .sender-name { font-size: 12px; font-weight: bold; color: var(--accent); margin-bottom: 5px; display: block; }
         .message-time { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 5px; text-align: right; display: block; }
 
         .chat-input-area { padding: 20px; background-color: var(--sidebar-bg); border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px; }
-        .chat-input-area input { flex: 1; padding: 15px; border-radius: 25px; border: none; background-color: var(--bg-color); color: var(--text-main); outline: none; }
+        .chat-input-area input { flex: 1; padding: 15px; border-radius: 25px; border: none; background-color: var(--bg-color); color: var(--text-main); outline: none; font-size: 15px;}
         .send-btn { background-color: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
         .send-btn:hover { background-color: var(--primary-hover); transform: scale(1.05); }
+        .send-btn:disabled { background-color: var(--border-color); cursor: not-allowed; transform: none; }
 
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
@@ -83,7 +95,8 @@
 </head>
 <body>
 
-    <!-- Экран Авторизации -->
+    <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+
     <div id="auth-screen">
         <div class="auth-box">
             <h2>Добро пожаловать в NeoChat</h2>
@@ -92,40 +105,43 @@
         </div>
     </div>
 
-    <!-- Боковая панель -->
     <aside class="sidebar">
         <div class="user-profile">
-            <img src="https://i.pravatar.cc/150?img=11" alt="Мой Аватар" class="avatar" id="my-avatar">
+            <div class="avatar-container" onclick="document.getElementById('avatar-input').click()">
+                <img src="https://i.pravatar.cc/150?img=11" alt="Мой Аватар" class="avatar" id="my-avatar">
+                <div class="avatar-overlay">
+                    <i class="fa-solid fa-camera"></i>
+                </div>
+            </div>
             <div class="user-info">
                 <h3 id="display-username">Гость</h3>
-                <p>В сети</p>
+                <p style="color: #4ade80;">В сети</p>
             </div>
         </div>
         <div class="chat-list">
             <div class="chat-item">
-                <div class="chat-avatar"><i class="fa-solid fa-users"></i></div>
+                <div class="chat-avatar"><i class="fa-solid fa-globe"></i></div>
                 <div class="chat-details">
-                    <div class="chat-header"><h4>Общий чат</h4></div>
+                    <div class="chat-header"><h4>Глобальный чат</h4></div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Чат для всех пользователей</div>
                 </div>
             </div>
         </div>
     </aside>
 
-    <!-- Зона чата -->
     <main class="chat-area">
         <div class="current-chat-header">
             <div class="current-chat-info">
-                <div class="chat-avatar"><i class="fa-solid fa-users"></i></div>
+                <div class="chat-avatar"><i class="fa-solid fa-globe"></i></div>
                 <div>
-                    <h3 style="font-size: 16px;">Общий чат сервера</h3>
-                    <p style="font-size: 13px; color: var(--text-muted);">Live соединение</p>
+                    <h3 style="font-size: 16px;">Глобальный чат</h3>
+                    <p style="font-size: 13px; color: var(--text-muted);" id="connection-status">Ожидание подключения...</p>
                 </div>
             </div>
         </div>
 
         <div class="messages-container" id="chat-box">
-            <!-- Сообщения будут появляться здесь -->
-        </div>
+            </div>
 
         <div class="chat-input-area">
             <input type="text" id="message-input" placeholder="Напишите сообщение..." disabled>
@@ -137,6 +153,18 @@
         let socket;
         let myUsername = "";
 
+        // Смена аватарки пользователя (локально)
+        const avatarInput = document.getElementById('avatar-input');
+        const myAvatar = document.getElementById('my-avatar');
+        avatarInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) { myAvatar.src = e.target.result; }
+                reader.readAsDataURL(file);
+            }
+        });
+
         // Элементы интерфейса
         const authScreen = document.getElementById('auth-screen');
         const loginBtn = document.getElementById('login-btn');
@@ -145,6 +173,7 @@
         const messageInput = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
         const chatBox = document.getElementById('chat-box');
+        const connectionStatus = document.getElementById('connection-status');
 
         // Логика входа
         loginBtn.addEventListener('click', () => {
@@ -155,27 +184,38 @@
                 authScreen.style.opacity = '0';
                 setTimeout(() => authScreen.style.display = 'none', 500);
                 
-                // Включаем инпуты
                 messageInput.disabled = false;
                 sendBtn.disabled = false;
 
-                // ПОДКЛЮЧЕНИЕ К СЕРВЕРУ
-                // Замени localhost:8000 на твой домен Railway (например, wss://app.railway.com/ws)
-                socket = new WebSocket('ws://pipipupu-production.up.railway.app');
+                // УМНОЕ ПОДКЛЮЧЕНИЕ К СЕРВЕРУ
+                // Код сам берет pipipupu-production.up.railway.app и делает из него ссылку!
+                const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+                const wsUrl = wsProtocol + '//' + window.location.host + '/ws';
+                
+                socket = new WebSocket(wsUrl);
+
+                socket.onopen = function() {
+                    connectionStatus.textContent = "Подключено, live режим 🟢";
+                    connectionStatus.style.color = "#4ade80";
+                };
 
                 socket.onmessage = function(event) {
                     const data = JSON.parse(event.data);
                     displayMessage(data.username, data.text, data.time);
+                };
+
+                socket.onclose = function() {
+                    connectionStatus.textContent = "Соединение разорвано 🔴";
+                    connectionStatus.style.color = "#ef4444";
                 };
             } else {
                 alert("Пожалуйста, введите имя!");
             }
         });
 
-        // Функция отрисовки сообщения
+        // Отрисовка сообщения
         function displayMessage(sender, text, time) {
             const msgDiv = document.createElement('div');
-            // Проверяем, наше ли это сообщение
             const isMe = (sender === myUsername);
             msgDiv.className = `message ${isMe ? 'sent' : 'received'}`;
             
@@ -193,18 +233,16 @@
         // Отправка сообщения
         function sendMessage() {
             const text = messageInput.value.trim();
-            if (text !== "" && socket.readyState === WebSocket.OPEN) {
+            if (text !== "" && socket && socket.readyState === WebSocket.OPEN) {
                 const now = new Date();
                 const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
 
-                // Формируем JSON пакет
                 const messageData = {
                     username: myUsername,
                     text: text,
                     time: timeStr
                 };
 
-                // Отправляем JSON на сервер
                 socket.send(JSON.stringify(messageData));
                 messageInput.value = '';
             }
@@ -213,6 +251,11 @@
         sendBtn.addEventListener('click', sendMessage);
         messageInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') sendMessage();
+        });
+        
+        // Вход по Enter на экране авторизации
+        usernameInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') loginBtn.click();
         });
     </script>
 </body>
