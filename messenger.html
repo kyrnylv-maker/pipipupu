@@ -161,7 +161,7 @@
 
                 // ПОДКЛЮЧЕНИЕ К СЕРВЕРУ
                 // Замени localhost:8000 на твой домен Railway (например, wss://app.railway.com/ws)
-                socket = new WebSocket('ws://localhost:8000/ws');
+                socket = new WebSocket('ws://pipipupu.railway.internal');
 
                 socket.onmessage = function(event) {
                     const data = JSON.parse(event.data);
