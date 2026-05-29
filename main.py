@@ -1,10 +1,13 @@
+import os
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
 from typing import List
 import uvicorn
 import json
 
 app = FastAPI()
 
+# Класс для управления подключениями
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
@@ -22,17 +25,26 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+# Когда кто-то заходит по твоей ссылке pipipupu-production.up.railway.app - отдаем HTML
+@app.get("/")
+async def get_frontend():
+    return FileResponse("messenger.html")
+
+# Обработка сообщений в реальном времени (WebSockets)
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            # Получаем JSON строку от клиента
+            # Получаем сообщение от пользователя
             data = await websocket.receive_text()
-            # Сразу рассылаем её всем участникам
+            # Рассылаем всем
             await manager.broadcast(data)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
+    # Railway автоматически назначает порт, по умолчанию на скрине у тебя 8080.
+    # Этот код возьмет нужный порт из системы Railway:
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
