@@ -1,10 +1,10 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from typing import List
 import uvicorn
+import json
 
 app = FastAPI()
 
-# Класс для управления подключениями (кто онлайн)
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
@@ -27,13 +27,12 @@ async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            # Ждем сообщение от пользователя
+            # Получаем JSON строку от клиента
             data = await websocket.receive_text()
-            # Рассылаем его всем остальным
+            # Сразу рассылаем её всем участникам
             await manager.broadcast(data)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
-# Эта строчка нужна для Railway
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
