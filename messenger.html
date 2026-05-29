@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeoChat - Крутой Мессенджер</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+        :root {
+            --bg-color: #0f172a;
+            --sidebar-bg: #1e293b;
+            --chat-bg: #0f172a;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --msg-received: #1e293b;
+            --msg-sent: #3b82f6;
+            --accent: #8b5cf6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
+
+        /* --- Экран авторизации --- */
+        #auth-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color); z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.5s;
+        }
+        .auth-box {
+            background-color: var(--sidebar-bg); padding: 40px; border-radius: 20px;
+            text-align: center; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .auth-box h2 { margin-bottom: 20px; color: var(--primary); }
+        .auth-box input {
+            width: 100%; padding: 15px; border-radius: 10px; border: 1px solid var(--border-color);
+            background-color: var(--bg-color); color: var(--text-main); margin-bottom: 20px; outline: none;
+        }
+        .auth-box button {
+            width: 100%; padding: 15px; border-radius: 10px; border: none;
+            background-color: var(--primary); color: white; font-weight: bold;
+            cursor: pointer; transition: 0.3s;
+        }
+        .auth-box button:hover { background-color: var(--primary-hover); }
+
+        /* --- Основной интерфейс --- */
+        .sidebar { width: 320px; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
+        .user-profile { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+        .user-info h3 { font-size: 16px; font-weight: 600; }
+        .user-info p { font-size: 13px; color: var(--text-muted); }
+
+        .chat-list { flex: 1; overflow-y: auto; }
+        .chat-item { display: flex; align-items: center; gap: 15px; padding: 15px 20px; cursor: pointer; transition: 0.2s; background-color: rgba(59, 130, 246, 0.1); }
+        .chat-avatar { width: 45px; height: 45px; border-radius: 50%; background-color: var(--accent); display: flex; justify-content: center; align-items: center; }
+        .chat-details flex: 1;
+        .chat-header h4 { font-size: 15px; }
+
+        .chat-area { flex: 1; display: flex; flex-direction: column; background-color: var(--chat-bg); }
+        .current-chat-header { padding: 20px; background-color: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .current-chat-info { display: flex; align-items: center; gap: 15px; }
+        
+        .messages-container { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .message { max-width: 60%; padding: 12px 16px; border-radius: 15px; font-size: 14px; line-height: 1.4; position: relative; }
+        .message.received { background-color: var(--msg-received); align-self: flex-start; border-bottom-left-radius: 5px; }
+        .message.sent { background-color: var(--msg-sent); align-self: flex-end; border-bottom-right-radius: 5px; }
+        .sender-name { font-size: 12px; font-weight: bold; color: var(--accent); margin-bottom: 5px; display: block; }
+        .message-time { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 5px; text-align: right; display: block; }
+
+        .chat-input-area { padding: 20px; background-color: var(--sidebar-bg); border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px; }
+        .chat-input-area input { flex: 1; padding: 15px; border-radius: 25px; border: none; background-color: var(--bg-color); color: var(--text-main); outline: none; }
+        .send-btn { background-color: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+        .send-btn:hover { background-color: var(--primary-hover); transform: scale(1.05); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- Экран Авторизации -->
+    <div id="auth-screen">
+        <div class="auth-box">
+            <h2>Добро пожаловать в NeoChat</h2>
+            <input type="text" id="username-input" placeholder="Придумайте никнейм..." autocomplete="off">
+            <button id="login-btn">Войти в чат</button>
+        </div>
+    </div>
+
+    <!-- Боковая панель -->
+    <aside class="sidebar">
+        <div class="user-profile">
+            <img src="https://i.pravatar.cc/150?img=11" alt="Мой Аватар" class="avatar" id="my-avatar">
+            <div class="user-info">
+                <h3 id="display-username">Гость</h3>
+                <p>В сети</p>
+            </div>
+        </div>
+        <div class="chat-list">
+            <div class="chat-item">
+                <div class="chat-avatar"><i class="fa-solid fa-users"></i></div>
+                <div class="chat-details">
+                    <div class="chat-header"><h4>Общий чат</h4></div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Зона чата -->
+    <main class="chat-area">
+        <div class="current-chat-header">
+            <div class="current-chat-info">
+                <div class="chat-avatar"><i class="fa-solid fa-users"></i></div>
+                <div>
+                    <h3 style="font-size: 16px;">Общий чат сервера</h3>
+                    <p style="font-size: 13px; color: var(--text-muted);">Live соединение</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="messages-container" id="chat-box">
+            <!-- Сообщения будут появляться здесь -->
+        </div>
+
+        <div class="chat-input-area">
+            <input type="text" id="message-input" placeholder="Напишите сообщение..." disabled>
+            <button class="send-btn" id="send-btn" disabled><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </main>
+
+    <script>
+        let socket;
+        let myUsername = "";
+
+        // Элементы интерфейса
+        const authScreen = document.getElementById('auth-screen');
+        const loginBtn = document.getElementById('login-btn');
+        const usernameInput = document.getElementById('username-input');
+        const displayUsername = document.getElementById('display-username');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const chatBox = document.getElementById('chat-box');
+
+        // Логика входа
+        loginBtn.addEventListener('click', () => {
+            const name = usernameInput.value.trim();
+            if (name.length > 0) {
+                myUsername = name;
+                displayUsername.textContent = myUsername;
+                authScreen.style.opacity = '0';
+                setTimeout(() => authScreen.style.display = 'none', 500);
+                
+                // Включаем инпуты
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+
+                // ПОДКЛЮЧЕНИЕ К СЕРВЕРУ
+                // Замени localhost:8000 на твой домен Railway (например, wss://app.railway.com/ws)
+                socket = new WebSocket('ws://localhost:8000/ws');
+
+                socket.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    displayMessage(data.username, data.text, data.time);
+                };
+            } else {
+                alert("Пожалуйста, введите имя!");
+            }
+        });
+
+        // Функция отрисовки сообщения
+        function displayMessage(sender, text, time) {
+            const msgDiv = document.createElement('div');
+            // Проверяем, наше ли это сообщение
+            const isMe = (sender === myUsername);
+            msgDiv.className = `message ${isMe ? 'sent' : 'received'}`;
+            
+            let htmlContent = '';
+            if (!isMe) {
+                htmlContent += `<span class="sender-name">${sender}</span>`;
+            }
+            htmlContent += `${text} <span class="message-time">${time}</span>`;
+            
+            msgDiv.innerHTML = htmlContent;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Отправка сообщения
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (text !== "" && socket.readyState === WebSocket.OPEN) {
+                const now = new Date();
+                const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+                // Формируем JSON пакет
+                const messageData = {
+                    username: myUsername,
+                    text: text,
+                    time: timeStr
+                };
+
+                // Отправляем JSON на сервер
+                socket.send(JSON.stringify(messageData));
+                messageInput.value = '';
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
