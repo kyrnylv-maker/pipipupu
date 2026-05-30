@@ -73,11 +73,37 @@
         };
 
         // Initialize App
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             initTheme();
+            await checkBackendAvailability();
             checkAuth();
             render();
         });
+
+        // Check if backend is available
+        async function checkBackendAvailability() {
+            try {
+                const response = await fetch(`${API_URL}/health`, { 
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                console.log('✅ Backend is available');
+            } catch (error) {
+                console.warn('⚠️ Backend is not available, enabling mock mode');
+                console.warn('Error:', error.message);
+                
+                // Автоматически включаем mock режим если бэкенд недоступен
+                if (!localStorage.getItem('mockMode')) {
+                    const enableMock = confirm(
+                        'Бэкенд недоступен. Включить режим тестирования с демо-данными?'
+                    );
+                    if (enableMock) {
+                        localStorage.setItem('mockMode', 'true');
+                        location.reload();
+                    }
+                }
+            }
+        }
 
         // Theme Management
         function initTheme() {
@@ -204,12 +230,24 @@
                     headers
                 });
                 
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.message || 'API Error');
+                // Получаем текст ответа
+                const text = await response.text();
+                console.log('API Response:', { status: response.status, text });
+                
+                // Пытаемся распарсить JSON
+                let data;
+                try {
+                    data = text ? JSON.parse(text) : {};
+                } catch (e) {
+                    console.error('Failed to parse JSON:', text);
+                    throw new Error(`Сервер вернул некорректный ответ: ${text.substring(0, 100)}`);
                 }
                 
-                return response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || data.error || `HTTP ${response.status}`);
+                }
+                
+                return data;
             } catch (error) {
                 console.error('API Error:', error);
                 throw error;
@@ -217,6 +255,25 @@
         }
 
         async function login(username, password) {
+            // Mock mode
+            if (localStorage.getItem('mockMode') === 'true') {
+                console.log('🧪 Mock mode: Login');
+                state.token = 'mock-token-' + Date.now();
+                state.user = {
+                    id: 'user-1',
+                    username: username,
+                    displayName: username,
+                    avatar: null
+                };
+                localStorage.setItem('token', state.token);
+                localStorage.setItem('user', JSON.stringify(state.user));
+                
+                state.currentView = 'messenger';
+                loadMockChats();
+                render();
+                return;
+            }
+
             try {
                 const data = await apiCall('/api/auth/login', {
                     method: 'POST',
@@ -238,6 +295,25 @@
         }
 
         async function register(username, password, displayName) {
+            // Mock mode
+            if (localStorage.getItem('mockMode') === 'true') {
+                console.log('🧪 Mock mode: Register');
+                state.token = 'mock-token-' + Date.now();
+                state.user = {
+                    id: 'user-1',
+                    username: username,
+                    displayName: displayName || username,
+                    avatar: null
+                };
+                localStorage.setItem('token', state.token);
+                localStorage.setItem('user', JSON.stringify(state.user));
+                
+                state.currentView = 'messenger';
+                loadMockChats();
+                render();
+                return;
+            }
+
             try {
                 const data = await apiCall('/api/auth/register', {
                     method: 'POST',
@@ -294,6 +370,32 @@
         async function sendMessage(text, attachments = []) {
             if (!state.currentChat || !text.trim()) return;
             
+            // Mock mode
+            if (localStorage.getItem('mockMode') === 'true') {
+                const chatId = state.currentChat.id;
+                if (!state.messages[chatId]) {
+                    state.messages[chatId] = [];
+                }
+                
+                const message = {
+                    id: 'msg-' + Date.now(),
+                    chatId: chatId,
+                    senderId: state.user.id,
+                    senderName: state.user.displayName,
+                    text: text,
+                    timestamp: new Date().toISOString(),
+                    read: false,
+                    reactions: {},
+                    attachments: attachments
+                };
+                
+                state.messages[chatId].push(message);
+                state.currentChat.lastMessage = message;
+                render();
+                scrollToBottom();
+                return;
+            }
+            
             try {
                 await apiCall(`/api/chats/${state.currentChat.id}/messages`, {
                     method: 'POST',
@@ -302,6 +404,95 @@
             } catch (error) {
                 console.error('Error sending message:', error);
                 alert('Ошибка отправки сообщения');
+            }
+        }
+
+        // Mock Data Functions
+        function loadMockChats() {
+            state.chats = [
+                {
+                    id: 'chat-1',
+                    name: 'Демо Чат',
+                    username: 'demo_chat',
+                    avatar: null,
+                    isChannel: false,
+                    userId: 'user-demo',
+                    lastMessage: {
+                        text: 'Привет! Это демонстрационный режим',
+                        timestamp: new Date().toISOString(),
+                        senderId: 'user-demo'
+                    },
+                    timestamp: new Date().toISOString(),
+                    unreadCount: 0
+                },
+                {
+                    id: 'chat-2',
+                    name: 'Тестовый Канал',
+                    username: 'test_channel',
+                    avatar: null,
+                    isChannel: true,
+                    subscribersCount: 100,
+                    lastMessage: {
+                        text: 'Добро пожаловать в тестовый режим!',
+                        timestamp: new Date(Date.now() - 3600000).toISOString(),
+                        senderId: 'admin-1'
+                    },
+                    timestamp: new Date(Date.now() - 3600000).toISOString(),
+                    unreadCount: 0
+                }
+            ];
+            
+            // Добавляем начальные сообщения
+            state.messages['chat-1'] = [
+                {
+                    id: 'msg-demo-1',
+                    chatId: 'chat-1',
+                    senderId: 'user-demo',
+                    senderName: 'Демо Пользователь',
+                    text: 'Привет! Это демонстрационный режим.',
+                    timestamp: new Date(Date.now() - 300000).toISOString(),
+                    read: true,
+                    reactions: {}
+                },
+                {
+                    id: 'msg-demo-2',
+                    chatId: 'chat-1',
+                    senderId: 'user-demo',
+                    senderName: 'Демо Пользователь',
+                    text: 'Вы можете отправлять сообщения и они будут сохраняться локально.',
+                    timestamp: new Date(Date.now() - 240000).toISOString(),
+                    read: true,
+                    reactions: {}
+                },
+                {
+                    id: 'msg-demo-3',
+                    chatId: 'chat-1',
+                    senderId: 'user-demo',
+                    senderName: 'Демо Пользователь',
+                    text: 'Чтобы подключиться к реальному бэкенду, выключите mock режим:\nlocalStorage.removeItem("mockMode"); location.reload();',
+                    timestamp: new Date(Date.now() - 180000).toISOString(),
+                    read: true,
+                    reactions: {}
+                }
+            ];
+        }
+
+        async function loadMessages(chatId) {
+            // Mock mode
+            if (localStorage.getItem('mockMode') === 'true') {
+                // Сообщения уже загружены в loadMockChats
+                render();
+                scrollToBottom();
+                return;
+            }
+
+            try {
+                const data = await apiCall(`/api/chats/${chatId}/messages`);
+                state.messages[chatId] = data.messages || [];
+                render();
+                scrollToBottom();
+            } catch (error) {
+                console.error('Error loading messages:', error);
             }
         }
 
