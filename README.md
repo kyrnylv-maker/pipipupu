@@ -176,19 +176,39 @@
 
 ## 🚀 Запуск
 
-### ✅ Быстрый запуск (исправлена ошибка авторизации)
+### Локально
 
 ```bash
-# Вариант 1: Открыть напрямую
-open index.html
+# Вариант 1: Локальный сервер с Express
+npm install
+npm start
+# Откройте http://localhost:3000
 
-# Вариант 2: Локальный сервер (рекомендуется)
+# Вариант 2: Простой сервер
 npx serve .
 # или
 python3 -m http.server 8000
 ```
 
-Затем откройте http://localhost:8000
+### Деплой на Railway 🚂
+
+**Проект полностью готов к деплою!**
+
+```bash
+# 1. Загрузите на GitHub
+git init
+git add .
+git commit -m "Telegram Web Clone"
+git push origin main
+
+# 2. Деплой на Railway
+# - Перейдите на https://railway.app
+# - Deploy from GitHub repo
+# - Выберите репозиторий
+# - Готово! 🎉
+```
+
+**Подробнее:** [QUICK_RAILWAY_DEPLOY.md](./QUICK_RAILWAY_DEPLOY.md)
 
 ### 🧪 Mock режим для тестирования
 
