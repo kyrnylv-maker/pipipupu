@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Telegram Web Clone - Полнофункциональный мессенджер">
+    <meta name="theme-color" content="#3390ec">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Telegram">
+    
+    <title>Telegram Web</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/icon-192x192.png">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/styles.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'tg-primary': '#3390ec',
+                        'tg-dark-bg': '#212121',
+                        'tg-dark-secondary': '#181818',
+                        'tg-dark-chat': '#0e0e0e',
+                        'tg-light-bg': '#ffffff',
+                        'tg-light-secondary': '#f4f4f5',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-tg-light-secondary dark:bg-tg-dark-bg transition-colors">
+    <div id="app"></div>
+    
+    <!-- Scripts -->
+    <script type="module" src="/app.js"></script>
+</body>
+</html>
